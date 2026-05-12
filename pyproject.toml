@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rivers-engineer"
+version = "0.1.0"
+description = "Reverse-engineer any codebase into a complete architectural story — powered by two collaborating LLMs"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+keywords = ["cli", "architecture", "code-analysis", "llm", "developer-tools", "reverse-engineering"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Utilities",
+]
+dependencies = [
+    # CLI Framework — Typer uses Python type hints to auto-generate help text,
+    # argument parsing, and shell completion. Zero boilerplate vs argparse/click.
+    "typer>=0.9.0",
+
+    # Terminal UI — Rich handles colored output, progress spinners, tables, and
+    # markdown rendering in the terminal. The developer UX matters.
+    "rich>=13.0.0",
+
+    # Anthropic SDK — official client for Claude API. Handles retries, streaming,
+    # token counting, and error handling.
+    "anthropic>=0.25.0",
+
+    # FastAPI — async-first web framework for the local UI server. Auto-generates
+    # OpenAPI docs, handles WebSockets for live updates, and starts in <1s.
+    "fastapi>=0.104.0",
+
+    # ASGI server — production-grade, async, required to run FastAPI locally.
+    # Does not block the main thread while serving the UI.
+    "uvicorn>=0.24.0",
+
+    # TOML parsing — for pyproject.toml dependency analysis.
+    # Built into Python 3.11+ as tomllib; this covers 3.9/3.10.
+    "tomli>=2.0.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",  # for testing FastAPI
+]
+
+[project.scripts]
+# The single entry point. 'river' command dispatches to both subcommands:
+#   river analyze /path/to/project
+#   river ui
+river = "rivers_engineer.cli:app"
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/rivers-engineer"
+"Bug Tracker" = "https://github.com/yourusername/rivers-engineer/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rivers_engineer*"]
+
+[tool.setuptools.package-data]
+rivers_engineer = ["ui/*", "ui/**/*"]

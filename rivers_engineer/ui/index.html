@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River's Engineer</title>
+<style>
+  /* ── Reset + Variables ─────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #0d1117;
+    --bg2:         #161b22;
+    --bg3:         #21262d;
+    --border:      #30363d;
+    --border2:     #3d444d;
+    --text:        #e6edf3;
+    --text2:       #8d96a0;
+    --text3:       #6e7681;
+    --cyan:        #79c0ff;
+    --cyan-dim:    #1f3a4f;
+    --green:       #56d364;
+    --green-dim:   #1a3a1f;
+    --yellow:      #e3b341;
+    --yellow-dim:  #3a2f0a;
+    --red:         #f85149;
+    --red-dim:     #3a1010;
+    --purple:      #bc8cff;
+    --purple-dim:  #2a1a4a;
+    --font-mono:   'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-sans:   -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius:      8px;
+    --radius-sm:   4px;
+    --shadow:      0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .project-badge {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--font-mono);
+  }
+
+  .branch-badge {
+    background: var(--purple-dim);
+    border: 1px solid var(--purple);
+    border-radius: var(--radius-sm);
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--purple);
+    font-family: var(--font-mono);
+    cursor: pointer;
+    display: none;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* ── Tab Nav ─────────────────────────────────────────────── */
+  .tab-nav {
+    display: flex;
+    gap: 2px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--text); background: var(--border); }
+  .tab-btn.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+  /* ── Main Layout ─────────────────────────────────────────── */
+  .app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 56px);
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  .sidebar {
+    width: 260px;
+    min-width: 200px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  .stat-key { color: var(--text2); }
+  .stat-val { color: var(--text); font-family: var(--font-mono); font-size: 12px; }
+
+  .layer-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .layer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .layer-item:hover { background: var(--bg3); border-color: var(--border); }
+  .layer-item.active { background: var(--cyan-dim); border-color: var(--cyan); }
+
+  .layer-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+
+  .layer-item.active .layer-num { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+  .layer-name { font-size: 13px; color: var(--text2); }
+  .layer-item.active .layer-name { color: var(--cyan); }
+
+  .dep-tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .dep-tag {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text2);
+  }
+
+  /* ── Main Content ─────────────────────────────────────────── */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Tab Panels ──────────────────────────────────────────── */
+  .tab-panel { display: none; flex: 1; padding: 24px; }
+  .tab-panel.active { display: flex; flex-direction: column; gap: 24px; }
+
+  /* ── Architecture Flow ──────────────────────────────────── */
+  .flow-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    min-height: 400px;
+  }
+
+  .flow-node {
+    width: 100%;
+    max-width: 600px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .flow-node:hover { border-color: var(--cyan); background: var(--bg2); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .flow-node.selected { border-color: var(--cyan); background: var(--cyan-dim); }
+
+  .flow-node-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .flow-node-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+
+  .flow-node.selected .flow-node-num { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+
+  .flow-node-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .flow-node.selected .flow-node-title { color: var(--cyan); }
+
+  .flow-node-techs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .tech-pill {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+  }
+
+  .flow-connector {
+    width: 2px;
+    height: 28px;
+    background: linear-gradient(to bottom, var(--border2), var(--cyan));
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .flow-connector::after {
+    content: '↓';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--cyan);
+    font-size: 14px;
+  }
+
+  /* ── Chapter Reader ──────────────────────────────────────── */
+  .chapter-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 32px;
+    max-width: 860px;
+  }
+
+  .chapter-panel h1, .chapter-panel h2, .chapter-panel h3 {
+    color: var(--text);
+    font-weight: 600;
+    margin: 20px 0 10px;
+    line-height: 1.3;
+  }
+
+  .chapter-panel h1 { font-size: 22px; color: var(--cyan); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; }
+  .chapter-panel h2 { font-size: 18px; color: var(--text); }
+  .chapter-panel h3 { font-size: 15px; color: var(--text2); }
+
+  .chapter-panel p { color: var(--text2); line-height: 1.75; margin-bottom: 14px; }
+  .chapter-panel strong { color: var(--text); }
+
+  .chapter-panel code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--cyan);
+  }
+
+  .chapter-panel pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    overflow-x: auto;
+    margin: 14px 0;
+  }
+
+  .chapter-panel pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .chapter-panel ul, .chapter-panel ol { margin: 10px 0 14px 20px; }
+  .chapter-panel li { color: var(--text2); margin-bottom: 6px; line-height: 1.6; }
+  .chapter-panel blockquote {
+    border-left: 3px solid var(--cyan);
+    padding: 8px 16px;
+    margin: 14px 0;
+    background: var(--cyan-dim);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: var(--text2);
+  }
+
+  /* ── Verdict Panel ──────────────────────────────────────── */
+  .verdict-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .verdict-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .verdict-card.strong { border-color: var(--green); }
+  .verdict-card.redundant { border-color: var(--yellow); }
+  .verdict-card.replace { border-color: var(--red); grid-column: span 2; }
+  .verdict-card.business { border-color: var(--purple); grid-column: span 2; }
+
+  .verdict-header {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .verdict-card.strong .verdict-header { color: var(--green); }
+  .verdict-card.redundant .verdict-header { color: var(--yellow); }
+  .verdict-card.replace .verdict-header { color: var(--red); }
+  .verdict-card.business .verdict-header { color: var(--purple); }
+
+  /* ── Reverse Path ────────────────────────────────────────── */
+  .reverse-path {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .path-line {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  .path-line:last-child { border-bottom: none; }
+  .path-arrow { color: var(--cyan); flex-shrink: 0; width: 16px; }
+  .path-label { color: var(--text3); min-width: 130px; }
+  .path-desc { color: var(--text); }
+
+  /* ── Page Generator ──────────────────────────────────────── */
+  .page-gen-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .page-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .page-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .page-chip:hover { border-color: var(--border2); color: var(--text); }
+  .page-chip.selected { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+  .page-chip input[type="checkbox"] { display: none; }
+
+  .wireframe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+    gap: 16px;
+  }
+
+  .wireframe-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .wireframe-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .wireframe-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    font-family: var(--font-mono);
+  }
+
+  .wireframe-frame {
+    width: 100%;
+    height: 320px;
+    border: none;
+    background: #fff;
+    display: block;
+  }
+
+  .wireframe-loading {
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  /* ── Demo Flow ───────────────────────────────────────────── */
+  .demo-flow-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .demo-step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    opacity: 0.4;
+    transition: all 0.4s;
+  }
+
+  .demo-step.active { opacity: 1; }
+  .demo-step.completed { opacity: 0.7; }
+  .demo-step:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .demo-step.active .step-num { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+  .demo-step.completed .step-num { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+  .step-content { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: var(--text2); }
+
+  .step-code {
+    margin-top: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--cyan);
+    display: none;
+  }
+
+  .demo-step.active .step-code { display: block; }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 16px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { border-color: var(--border2); background: var(--border); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-primary { background: var(--cyan); color: var(--bg); border-color: var(--cyan); font-weight: 600; }
+  .btn-primary:hover { background: #9ecfff; border-color: #9ecfff; }
+
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── Spinner ─────────────────────────────────────────────── */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Toast ───────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.25s;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+
+  /* ── Empty State ─────────────────────────────────────────── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    text-align: center;
+    color: var(--text3);
+    gap: 12px;
+  }
+
+  .empty-icon { font-size: 48px; }
+
+  /* ── Loading Screen ──────────────────────────────────────── */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #loading-screen .big-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .verdict-grid { grid-template-columns: 1fr; }
+    .verdict-card.replace, .verdict-card.business { grid-column: span 1; }
+    .wireframe-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="big-spinner"></div>
+  <div style="color: var(--text2); font-size: 13px;">Loading report…</div>
+</div>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header>
+  <div class="header-left">
+    <div class="logo">🌊 River's Engineer</div>
+    <div class="project-badge" id="project-badge">Loading…</div>
+    <div class="branch-badge" id="branch-badge"></div>
+  </div>
+  <div class="header-right">
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="flow">Architecture Flow</button>
+      <button class="tab-btn" data-tab="book">The Book</button>
+      <button class="tab-btn" data-tab="verdict">Tech Verdict</button>
+      <button class="tab-btn" data-tab="pages">Page Generator</button>
+      <button class="tab-btn" data-tab="demo">Demo Flow</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── App Body ────────────────────────────────────────────── -->
+<div class="app-body">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Project</div>
+      <div class="stat-row"><span class="stat-key">Language</span><span class="stat-val" id="sb-lang">—</span></div>
+      <div class="stat-row"><span class="stat-key">Files</span><span class="stat-val" id="sb-files">—</span></div>
+      <div class="stat-row"><span class="stat-key">Lines</span><span class="stat-val" id="sb-lines">—</span></div>
+      <div class="stat-row"><span class="stat-key">Branch</span><span class="stat-val" id="sb-branch">main</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Layers</div>
+      <div class="layer-list" id="layer-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Frameworks</div>
+      <div class="dep-tag-list" id="sb-frameworks">—</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Top Dependencies</div>
+      <div class="dep-tag-list" id="sb-deps">—</div>
+    </div>
+
+    <div class="sidebar-section" id="branch-selector-section" style="display:none;">
+      <div class="sidebar-label">Switch Report</div>
+      <div id="branch-selector-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- ── Tab: Architecture Flow ─────────────────────── -->
+    <div class="tab-panel active" id="tab-flow">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:4px;">Architecture Flow</h2>
+          <p style="color:var(--text3); font-size:13px;">Click any layer to read its full chapter in The Book</p>
+        </div>
+      </div>
+
+      <div class="flow-container" id="flow-container">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Selected chapter detail -->
+      <div id="selected-chapter" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <h3 id="selected-chapter-title" style="font-size:16px; color:var(--cyan);"></h3>
+          <button class="btn btn-sm" onclick="document.getElementById('selected-chapter').style.display='none'">✕ Close</button>
+        </div>
+        <div class="chapter-panel" id="selected-chapter-content"></div>
+      </div>
+    </div>
+
+    <!-- ── Tab: The Book ──────────────────────────────── -->
+    <div class="tab-panel" id="tab-book">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:4px;">The Book</h2>
+          <p style="color:var(--text3); font-size:13px;">Full architectural analysis — Chapters 1 through 5</p>
+        </div>
+        <button class="btn btn-sm" onclick="copyBook()">📋 Copy Markdown</button>
+      </div>
+
+      <div class="chapter-panel" id="book-content">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- ── Tab: Tech Verdict ──────────────────────────── -->
+    <div class="tab-panel" id="tab-verdict">
+      <div>
+        <h2 style="font-size:18px; font-weight:700; margin-bottom:4px;">Tech Verdict</h2>
+        <p style="color:var(--text3); font-size:13px;">What's strong, what's redundant, and what needs to change</p>
+      </div>
+
+      <div class="verdict-grid" id="verdict-grid">
+        <!-- Populated by JS -->
+      </div>
+
+      <div>
+        <h3 style="font-size:15px; font-weight:600; margin-bottom:12px;">The Full Reverse Path</h3>
+        <div class="reverse-path" id="reverse-path">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Page Generator ────────────────────────── -->
+    <div class="tab-panel" id="tab-pages">
+      <div>
+        <h2 style="font-size:18px; font-weight:700; margin-bottom:4px;">Page Generator</h2>
+        <p style="color:var(--text3); font-size:13px;">AI-generated wireframes for each layer of your system</p>
+      </div>
+
+      <div class="page-gen-toolbar">
+        <div class="page-selector" id="page-selector">
+          <!-- Layer chips populated by JS -->
+        </div>
+        <button class="btn btn-primary" id="gen-btn" onclick="generatePages()">
+          ✦ Generate Wireframes
+        </button>
+      </div>
+
+      <div class="wireframe-grid" id="wireframe-grid">
+        <div class="empty-state">
+          <div class="empty-icon">🖼</div>
+          <div>Select layers above and click <strong>Generate Wireframes</strong></div>
+          <div style="font-size:12px; color:var(--text3);">Requires ANTHROPIC_API_KEY to be set</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Demo Flow ─────────────────────────────── -->
+    <div class="tab-panel" id="tab-demo">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:4px;">Demo Flow</h2>
+          <p style="color:var(--text3); font-size:13px;">Step through a simulated user journey end-to-end</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" id="demo-prev-btn" onclick="demoStep(-1)" disabled>← Previous</button>
+          <button class="btn btn-primary" id="demo-next-btn" onclick="demoStep(1)">Next Step →</button>
+          <button class="btn" onclick="resetDemo()">↺ Reset</button>
+        </div>
+      </div>
+
+      <div class="demo-flow-container" id="demo-flow-container">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app-body -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let reportData = null;
+let currentDemoStep = 0;
+let demoSteps = [];
+
+// ── Boot ───────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const res = await fetch('/api/report');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    reportData = await res.json();
+    render();
+    document.getElementById('loading-screen').style.display = 'none';
+    loadBranchSelector();
+  } catch (e) {
+    document.getElementById('loading-screen').innerHTML = `
+      <div style="color:var(--red); font-size:14px; text-align:center; padding:24px;">
+        <div style="font-size:32px; margin-bottom:12px;">⚠</div>
+        <strong>Could not load report</strong><br>
+        <span style="color:var(--text3); font-size:12px;">${e.message}</span>
+      </div>`;
+  }
+}
+
+// ── Render All Sections ────────────────────────────────────────
+function render() {
+  const project = reportData.project || {};
+  const book = reportData.book || {};
+  const layers = (reportData.ui_hints || {}).layers || [];
+  const deps = reportData.dependencies || {};
+
+  // Header
+  document.getElementById('project-badge').textContent = project.name || 'Unknown';
+  if (project.branch) {
+    const bb = document.getElementById('branch-badge');
+    bb.textContent = `⎇ ${project.branch}`;
+    bb.style.display = 'inline-flex';
+  }
+  document.title = `River's Engineer — ${project.name || 'Report'}`;
+
+  // Sidebar stats
+  document.getElementById('sb-lang').textContent = project.primary_language || '—';
+  document.getElementById('sb-files').textContent = (project.file_count || 0).toLocaleString();
+  document.getElementById('sb-lines').textContent = (project.total_lines || 0).toLocaleString();
+  document.getElementById('sb-branch').textContent = project.branch || 'main';
+
+  // Sidebar frameworks
+  const fws = project.frameworks || [];
+  const fwEl = document.getElementById('sb-frameworks');
+  fwEl.innerHTML = fws.length
+    ? fws.map(f => `<span class="dep-tag">${f}</span>`).join('')
+    : '<span style="color:var(--text3); font-size:12px;">None detected</span>';
+
+  // Sidebar top deps
+  const allDeps = Object.values(deps).reduce((acc, d) => ({ ...acc, ...d }), {});
+  const topDeps = Object.keys(allDeps).slice(0, 12);
+  const depsEl = document.getElementById('sb-deps');
+  depsEl.innerHTML = topDeps.length
+    ? topDeps.map(d => `<span class="dep-tag">${d}</span>`).join('')
+    : '<span style="color:var(--text3); font-size:12px;">None found</span>';
+
+  // Sidebar layer list
+  renderLayerList(layers);
+
+  // Architecture Flow
+  renderFlowDiagram(layers, book.archaeology || '');
+
+  // The Book
+  renderBook(book.archaeology || '', book.critique || '');
+
+  // Tech Verdict
+  renderVerdict(book.critique || '');
+
+  // Page Generator chips
+  renderPageChips(layers);
+
+  // Demo Flow
+  buildDemoSteps(layers, book.archaeology || '');
+  renderDemoFlow();
+}
+
+// ── Sidebar Layer List ─────────────────────────────────────────
+function renderLayerList(layers) {
+  const el = document.getElementById('layer-list');
+  if (!layers.length) {
+    el.innerHTML = '<span style="color:var(--text3);font-size:12px;">No layers detected</span>';
+    return;
+  }
+  el.innerHTML = layers.map((layer, i) => `
+    <div class="layer-item" data-idx="${i}" onclick="selectLayer(${i})">
+      <span class="layer-num">${layer.number || (i+1)}</span>
+      <span class="layer-name">${layer.name || `Layer ${i+1}`}</span>
+    </div>
+  `).join('');
+}
+
+function selectLayer(idx) {
+  document.querySelectorAll('.layer-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  switchTab('flow');
+  const nodes = document.querySelectorAll('.flow-node');
+  if (nodes[idx]) {
+    nodes[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    nodes[idx].click();
+  }
+}
+
+// ── Architecture Flow Diagram ──────────────────────────────────
+function renderFlowDiagram(layers, archaeology) {
+  const container = document.getElementById('flow-container');
+  if (!layers.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏛</div><div>No architectural layers detected in this report.</div></div>';
+    return;
+  }
+
+  // Parse tech hints from archaeology text per chapter
+  const chapterTexts = parseChapters(archaeology);
+
+  container.innerHTML = layers.map((layer, i) => {
+    const isLast = i === layers.length - 1;
+    const chapterText = chapterTexts[i] || '';
+    const techs = extractTechs(chapterText).slice(0, 5);
+
+    return `
+      <div class="flow-node" data-idx="${i}" onclick="showChapterDetail(${i})" style="max-width:600px;width:100%;">
+        <div class="flow-node-header">
+          <span class="flow-node-num">${layer.number || (i+1)}</span>
+          <span class="flow-node-title">${layer.name || `Layer ${i+1}`}</span>
+        </div>
+        ${techs.length ? `<div class="flow-node-techs">${techs.map(t => `<span class="tech-pill">${t}</span>`).join('')}</div>` : ''}
+      </div>
+      ${!isLast ? '<div class="flow-connector"></div>' : ''}
+    `;
+  }).join('');
+}
+
+function showChapterDetail(idx) {
+  const layers = (reportData.ui_hints || {}).layers || [];
+  const layer = layers[idx];
+  const archaeology = (reportData.book || {}).archaeology || '';
+  const chapterTexts = parseChapters(archaeology);
+
+  document.querySelectorAll('.flow-node').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+  document.querySelectorAll('.layer-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  const panel = document.getElementById('selected-chapter');
+  const title = document.getElementById('selected-chapter-title');
+  const content = document.getElementById('selected-chapter-content');
+
+  title.textContent = `Chapter ${(layer && layer.number) || (idx+1)}: ${(layer && layer.name) || `Layer ${idx+1}`}`;
+  content.innerHTML = markdownToHtml(chapterTexts[idx] || '_No content found for this chapter._');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Book Renderer ─────────────────────────────────────────────
+function renderBook(archaeology, critique) {
+  const el = document.getElementById('book-content');
+  const combined = (archaeology + '\n\n---\n\n' + critique).trim();
+  el.innerHTML = markdownToHtml(combined);
+}
+
+function copyBook() {
+  const archaeology = (reportData.book || {}).archaeology || '';
+  const critique = (reportData.book || {}).critique || '';
+  navigator.clipboard.writeText(archaeology + '\n\n---\n\n' + critique)
+    .then(() => showToast('Copied to clipboard ✓', 'success'))
+    .catch(() => showToast('Failed to copy', 'error'));
+}
+
+// ── Verdict Renderer ──────────────────────────────────────────
+function renderVerdict(critique) {
+  const grid = document.getElementById('verdict-grid');
+  const pathEl = document.getElementById('reverse-path');
+
+  // Split critique into sections
+  const sections = splitVerdictSections(critique);
+
+  grid.innerHTML = `
+    <div class="verdict-card strong">
+      <div class="verdict-header">✅ What's Strong</div>
+      <div class="chapter-panel" style="border:none;padding:0;background:none;">${markdownToHtml(sections.strong || '_No items identified._')}</div>
+    </div>
+    <div class="verdict-card redundant">
+      <div class="verdict-header">⚠️ What's Redundant</div>
+      <div class="chapter-panel" style="border:none;padding:0;background:none;">${markdownToHtml(sections.redundant || '_No items identified._')}</div>
+    </div>
+    <div class="verdict-card replace">
+      <div class="verdict-header">🔴 What Should Be Replaced</div>
+      <div class="chapter-panel" style="border:none;padding:0;background:none;">${markdownToHtml(sections.replace || '_No items identified._')}</div>
+    </div>
+    <div class="verdict-card business">
+      <div class="verdict-header">💼 The Business Layer</div>
+      <div class="chapter-panel" style="border:none;padding:0;background:none;">${markdownToHtml(sections.business || '_No items identified._')}</div>
+    </div>
+  `;
+
+  // Reverse Path
+  const pathLines = parseReversePath(critique);
+  if (pathLines.length) {
+    pathEl.innerHTML = pathLines.map(line => `
+      <div class="path-line">
+        <span class="path-arrow">→</span>
+        <span class="path-label">${line.label}</span>
+        <span class="path-desc">${line.desc}</span>
+      </div>
+    `).join('');
+  } else {
+    pathEl.innerHTML = `<div class="chapter-panel" style="border:none;padding:0;background:none;">${markdownToHtml(sections.path || '_Reverse path not found in report._')}</div>`;
+  }
+}
+
+function splitVerdictSections(text) {
+  const sections = { strong: '', redundant: '', replace: '', business: '', path: '' };
+  let current = null;
+  const lines = text.split('\n');
+
+  for (const line of lines) {
+    const ll = line.toLowerCase();
+    if (ll.includes("what's strong") || ll.includes('✅')) current = 'strong';
+    else if (ll.includes("what's redundant") || ll.includes('⚠️')) current = 'redundant';
+    else if (ll.includes('should be replaced') || ll.includes('🔴')) current = 'replace';
+    else if (ll.includes('business layer') || ll.includes('💼')) current = 'business';
+    else if (ll.includes('reverse path') || ll.includes('full reverse')) current = 'path';
+    else if (current) sections[current] += line + '\n';
+  }
+  return sections;
+}
+
+function parseReversePath(text) {
+  const lines = [];
+  let inPath = false;
+  for (const line of text.split('\n')) {
+    if (line.toLowerCase().includes('reverse path') || line.toLowerCase().includes('full reverse')) {
+      inPath = true;
+      continue;
+    }
+    if (inPath && line.trim().startsWith('→')) {
+      const rest = line.replace(/^→\s*/, '');
+      const bracketMatch = rest.match(/^\[([^\]]+)\]\s*:?\s*(.*)/);
+      if (bracketMatch) {
+        lines.push({ label: bracketMatch[1], desc: bracketMatch[2].trim() });
+      } else {
+        const colonIdx = rest.indexOf(':');
+        if (colonIdx > -1) {
+          lines.push({ label: rest.slice(0, colonIdx).trim(), desc: rest.slice(colonIdx + 1).trim() });
+        } else {
+          lines.push({ label: 'Layer', desc: rest.trim() });
+        }
+      }
+    }
+    if (inPath && line.startsWith('##') && !line.toLowerCase().includes('reverse')) {
+      inPath = false;
+    }
+  }
+  return lines;
+}
+
+// ── Page Generator ────────────────────────────────────────────
+function renderPageChips(layers) {
+  const el = document.getElementById('page-selector');
+  if (!layers.length) {
+    el.innerHTML = '<span style="color:var(--text3);font-size:13px;">No layers to generate pages for</span>';
+    return;
+  }
+  el.innerHTML = layers.map((layer, i) => `
+    <label class="page-chip" title="Generate wireframe for this layer">
+      <input type="checkbox" value="${layer.name || i}" ${i < 2 ? 'checked' : ''} onchange="this.parentElement.classList.toggle('selected', this.checked)">
+      ${layer.name || `Layer ${i+1}`}
+    </label>
+  `).join('');
+  // Set initial selected state
+  el.querySelectorAll('input:checked').forEach(cb => cb.parentElement.classList.add('selected'));
+}
+
+async function generatePages() {
+  const checkboxes = document.querySelectorAll('#page-selector input[type="checkbox"]:checked');
+  const features = Array.from(checkboxes).map(cb => cb.value);
+
+  if (!features.length) {
+    showToast('Select at least one layer to generate wireframes', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('gen-btn');
+  const grid = document.getElementById('wireframe-grid');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+
+  // Show loading cards
+  grid.innerHTML = features.map(f => `
+    <div class="wireframe-card" id="wf-${sanitizeId(f)}">
+      <div class="wireframe-header">
+        <span class="wireframe-title">${f}</span>
+        <span class="spinner"></span>
+      </div>
+      <div class="wireframe-loading"><span class="spinner"></span> Generating wireframe…</div>
+    </div>
+  `).join('');
+
+  try {
+    const res = await fetch('/api/generate-pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ features })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const wireframes = data.wireframes || {};
+
+    // Update each card
+    for (const [feature, html] of Object.entries(wireframes)) {
+      const card = document.getElementById(`wf-${sanitizeId(feature)}`);
+      if (card) {
+        card.innerHTML = `
+          <div class="wireframe-header">
+            <span class="wireframe-title">${feature}</span>
+            <button class="btn btn-sm" onclick="openWireframeFullscreen(this)">⛶ Fullscreen</button>
+          </div>
+          <iframe class="wireframe-frame" srcdoc="${escapeHtmlAttr(html)}" sandbox="allow-scripts"></iframe>
+        `;
+      }
+    }
+
+    showToast(`Generated ${Object.keys(wireframes).length} wireframes ✓`, 'success');
+
+  } catch (e) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div>${e.message}</div></div>`;
+    showToast('Generation failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✦ Generate Wireframes';
+  }
+}
+
+function openWireframeFullscreen(btn) {
+  const iframe = btn.closest('.wireframe-card').querySelector('iframe');
+  if (iframe) {
+    const win = window.open('', '_blank');
+    win.document.write(iframe.getAttribute('srcdoc') || '');
+    win.document.close();
+  }
+}
+
+// ── Demo Flow ─────────────────────────────────────────────────
+function buildDemoSteps(layers, archaeology) {
+  const chapterTexts = parseChapters(archaeology);
+  demoSteps = layers.map((layer, i) => ({
+    num: i + 1,
+    title: layer.name || `Layer ${i+1}`,
+    desc: extractFirstSentence(chapterTexts[i] || ''),
+    code: extractCodeSnippet(chapterTexts[i] || ''),
+  }));
+
+  // Add a final "Output" step
+  demoSteps.push({
+    num: layers.length + 1,
+    title: 'Output Delivered',
+    desc: 'The full response has been processed and delivered to the end user or consuming system.',
+    code: '→ Response returned',
+  });
+}
+
+function renderDemoFlow() {
+  const container = document.getElementById('demo-flow-container');
+  if (!demoSteps.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎬</div><div>No steps to demo — run an analysis first</div></div>';
+    return;
+  }
+
+  container.innerHTML = demoSteps.map((step, i) => `
+    <div class="demo-step ${i === currentDemoStep ? 'active' : i < currentDemoStep ? 'completed' : ''}" id="demo-step-${i}">
+      <div class="step-num">${i < currentDemoStep ? '✓' : step.num}</div>
+      <div class="step-content">
+        <div class="step-title">${step.title}</div>
+        <div class="step-desc">${step.desc || 'Processing this layer…'}</div>
+        ${step.code ? `<div class="step-code">${escapeHtml(step.code)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('demo-prev-btn').disabled = currentDemoStep === 0;
+  document.getElementById('demo-next-btn').disabled = currentDemoStep >= demoSteps.length - 1;
+  document.getElementById('demo-next-btn').textContent = currentDemoStep >= demoSteps.length - 1 ? '✓ Complete' : 'Next Step →';
+}
+
+function demoStep(dir) {
+  currentDemoStep = Math.max(0, Math.min(demoSteps.length - 1, currentDemoStep + dir));
+  renderDemoFlow();
+  document.getElementById(`demo-step-${currentDemoStep}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function resetDemo() {
+  currentDemoStep = 0;
+  renderDemoFlow();
+}
+
+// ── Branch Selector ───────────────────────────────────────────
+async function loadBranchSelector() {
+  try {
+    const res = await fetch('/api/branches');
+    if (!res.ok) return;
+    const data = await res.json();
+    const reports = data.reports || [];
+    if (reports.length > 1) {
+      const section = document.getElementById('branch-selector-section');
+      section.style.display = 'block';
+      const list = document.getElementById('branch-selector-list');
+      list.innerHTML = reports.map(r => `
+        <div class="dep-tag" style="cursor:pointer;padding:6px 10px;border-radius:4px;" onclick="switchReport('${r.file}')">
+          ${r.branch ? `⎇ ${r.branch}` : r.project}
+          <span style="color:var(--text3);font-size:11px;display:block;">${r.generated_at || ''}</span>
+        </div>
+      `).join('');
+    }
+  } catch (e) { /* silent */ }
+}
+
+async function switchReport(file) {
+  try {
+    const res = await fetch(`/api/switch-report?file=${encodeURIComponent(file)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    reportData = await res.json();
+    currentDemoStep = 0;
+    render();
+    showToast('Switched report ✓', 'success');
+  } catch (e) {
+    showToast('Failed to switch: ' + e.message, 'error');
+  }
+}
+
+// ── Tab Switching ─────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tabId}`));
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+
+/** Parse the archaeology text into per-chapter strings, indexed by layer order */
+function parseChapters(text) {
+  const result = [];
+  const parts = text.split(/(?=## Chapter \d)/);
+  for (const part of parts) {
+    if (part.trim().startsWith('## Chapter')) {
+      result.push(part.trim());
+    }
+  }
+  return result;
+}
+
+/** Extract technology names from a chapter text (bolded words) */
+function extractTechs(text) {
+  const techs = [];
+  const matches = text.matchAll(/\*\*([A-Z][a-zA-Z0-9\.\-\/]+)\*\*/g);
+  for (const m of matches) {
+    if (!techs.includes(m[1]) && m[1].length < 30) techs.push(m[1]);
+  }
+  return techs;
+}
+
+/** Get first non-heading sentence from a markdown chunk */
+function extractFirstSentence(text) {
+  const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+  const first = lines[0] || '';
+  const sentence = first.split(/[.!?]/)[0];
+  return sentence.replace(/\*\*/g, '').trim().slice(0, 160) || 'See The Book for details.';
+}
+
+/** Extract a code snippet from a markdown chunk */
+function extractCodeSnippet(text) {
+  const match = text.match(/```[a-z]*\n([\s\S]*?)```/);
+  if (match) return match[1].trim().split('\n').slice(0, 4).join('\n');
+  // Fall back to inline code
+  const inlineMatch = text.match(/`([^`]+)`/);
+  return inlineMatch ? inlineMatch[1] : '';
+}
+
+/** Very simple markdown → HTML (covers the common subset the LLMs produce) */
+function markdownToHtml(md) {
+  if (!md) return '';
+  let html = md
+    // Horizontal rule
+    .replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">')
+    // Headings
+    .replace(/^#### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold + italic
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    // Blockquotes
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    // Unordered lists (basic)
+    .replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
+    // Numbered lists
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // Wrap consecutive <li> items in <ul>
+    .replace(/(<li>[\s\S]*?<\/li>)(\s*<li>)/g, '$1$2')
+    // Code blocks
+    .replace(/```[\w]*\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+    // Double newline → paragraph break
+    .replace(/\n\n+/g, '</p><p>')
+    // Remaining single newlines → <br>
+    .replace(/\n/g, '<br>');
+
+  // Wrap in paragraph if not already starting with a block element
+  if (!html.startsWith('<h') && !html.startsWith('<pre') && !html.startsWith('<blockquote') && !html.startsWith('<hr')) {
+    html = '<p>' + html + '</p>';
+  }
+
+  // Clean up <p> wrapping around block elements
+  html = html
+    .replace(/<p>(<h[1-6]>)/g, '$1')
+    .replace(/(<\/h[1-6]>)<\/p>/g, '$1')
+    .replace(/<p>(<pre>)/g, '$1')
+    .replace(/(<\/pre>)<\/p>/g, '$1')
+    .replace(/<p>(<blockquote>)/g, '$1')
+    .replace(/(<\/blockquote>)<\/p>/g, '$1')
+    .replace(/<p>(<hr[^>]*>)<\/p>/g, '$1');
+
+  // Wrap <li> groups in <ul>
+  html = html.replace(/(<li>(?:[\s\S]*?<\/li>\s*)+)/g, '<ul>$1</ul>');
+
+  return html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escapeHtmlAttr(str) {
+  return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function sanitizeId(str) {
+  return str.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show${type ? ' ' + type : ''}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Start ─────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
