@@ -1,105 +1,93 @@
 # River's Engineer
 
-River's Engineer is PHANG's public engineering credibility tool: a CLI and local UI that reverse-engineer codebases into architectural reports.
+**AI-native engineering workflow tool.** Reverse-engineers any codebase into a complete architectural story using two collaborating LLMs.
 
-## Purpose
+Works with **DeepSeek, Anthropic Claude, OpenAI, and Ollama** — you control the provider.
 
-This repository exists to turn real codebases into explainable architecture artifacts. It is both a product and a public demonstration of PHANG's engineering taste.
+---
 
-## Status
+## What it does
 
-**Phase:** active build, pre-launch  
-**Visibility direction:** public/open-source  
-**Operational posture:** local-first, contributor-ready
-
-## Architecture
-
-Current structure is a Python package with two main surfaces:
-
-- CLI surface through `river`
-- local UI server for report visualization
-
-High-level flow:
-
-`filesystem collector -> structural analyzer -> LLM pass 1 -> LLM pass 2 -> markdown/json report -> local UI`
-
-## Stack
-
-- Python
-- Typer
-- Rich
-- FastAPI
-- Uvicorn
-- Anthropic SDK
-- setuptools packaging
-
-## Roadmap Direction
-
-Short-term:
-- stabilize the core analyze pipeline
-- make report artifacts deterministic enough for repeated use
-- tighten packaging and contributor onboarding
-
-Medium-term:
-- improve report/UI coupling
-- add tests around collector/analyzer behavior
-- prepare for public repo visibility under PHANG branding
-
-## Deployment Direction
-
-This is not a VPS-first product right now. Deployment direction is:
-
-- local CLI install for early users
-- optional hosted demo later if economics and maintenance justify it
-
-## Environment
-
-Use `.env.example` or exported shell variables for local setup. The only required secret today is the Anthropic API key.
-
-## Never Commit
-
-- real API keys
-- generated local report artifacts unless intentionally publishing examples
-- virtualenvs, caches, build outputs, local test fixtures with user code
-
-## Folder Hygiene Suggestions
-
-- keep package code under `rivers_engineer/` only
-- separate example artifacts from real generated output
-- avoid checking in reports created from private client codebases
-- add tests for collector and analyzer regressions before widening scope
-
-## Safe Git Commands
-
-```bash
-git status
-git remote -v
-git checkout -b chore/repo-hygiene
-git add README.md .gitignore .env.example pyproject.toml
-git diff --staged
-git commit -m "docs: standardize repo entrypoint and hygiene"
+```
+filesystem collector → structural analyzer → LLM 1 (Archaeologist) → LLM 2 (Critic) → markdown/json report → local UI
 ```
 
-## Migration Notes
+The **Archaeologist** reads the codebase and writes Chapters 1–4: architecture, data flow, entry points, tech map.
 
-- local folder name remains `rivers-engineer 2`; remote can remain `rivers`
-- before public push, normalize branding, homepage URLs, and contribution docs
-- generated `river-report-*` output should stay local unless intentionally curated as examples
+The **Critic** receives the Archaeologist's output as input data (not shared context), challenges the findings, and produces Chapter 5 + a Reverse Path — the sequence of steps to rebuild the system from scratch.
 
-## Quick Start
+Both LLMs work independently. The separation produces better output than one LLM asked to do both.
+
+---
+
+## Quick start
 
 ```bash
 pip install -e .
-export ANTHROPIC_API_KEY=replace-me
-river --help
+
+# Default: DeepSeek (fast, cost-efficient)
+export RIVER_API_KEY=your-deepseek-key
+river analyze ./your-project
+
+# Use Anthropic Claude instead
+export RIVER_PROVIDER=anthropic
+export RIVER_API_KEY=your-anthropic-key
+river analyze ./your-project
+
+# Use OpenAI
+export RIVER_PROVIDER=openai
+export RIVER_API_KEY=your-openai-key
+river analyze ./your-project
+
+# Use Ollama (local, no key required)
+export RIVER_PROVIDER=ollama
+export RIVER_MODEL=llama3
+river analyze ./your-project
 ```
 
-3. **`analyzer.analyze()`** — detects languages, parses dependency manifests, runs AST extraction, detects frameworks, selects top 25 key files
-4. **`archaeologist.excavate()`** — builds context prompt, sends to `claude-sonnet-4-6`, retries on rate limits, returns Chapters 1–4
-5. **`critic.critique()`** — receives archaeology text as input data, sends to a second independent LLM call, returns Chapter 5 + Reverse Path
-6. **`reporter.generate()`** — assembles the markdown book, writes `.md` and `.json` sidecar to the project directory
-7. **Terminal** — Rich renders the completion panel, then prints a Chapter 1 preview in the terminal
-8. **`river ui`** — FastAPI + uvicorn serve `ui/index.html` on `localhost:3000`
+---
+
+## Provider configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RIVER_PROVIDER` | `deepseek` | Provider: `deepseek`, `anthropic`, `openai`, `ollama` |
+| `RIVER_API_KEY` | — | API key for the selected provider |
+| `RIVER_MODEL` | provider default | Override model name |
+| `RIVER_API_BASE` | provider default | Override base URL (useful for proxies, local models) |
+
+Provider defaults:
+
+| Provider | Default model | Base URL |
+|----------|--------------|----------|
+| deepseek | `deepseek-chat` | `https://api.deepseek.com` |
+| anthropic | `claude-sonnet-4-6` | Anthropic SDK default |
+| openai | `gpt-4o` | `https://api.openai.com/v1` |
+| ollama | `llama3` | `http://localhost:11434/v1` |
+
+---
+
+## Commands
+
+```bash
+# Analyze a codebase
+river analyze ./my-project
+
+# Analyze a specific git branch
+river analyze ./my-project --branch feature/auth
+
+# Summary mode (structure only, faster and cheaper)
+river analyze ./my-project --depth summary
+
+# Save report to a specific path
+river analyze ./my-project --output ./reports/my-project.md
+
+# Open the visual UI (reads the most recent report)
+river ui
+
+# Open with a specific report
+river ui --file ./river-report-20240101-120000.json
+```
 
 ---
 
@@ -107,18 +95,37 @@ river --help
 
 ```
 rivers_engineer/
-├── cli.py           — Entry point, two subcommands: analyze + ui
-├── collector.py     — Filesystem walker, file reader, smart truncation
-├── analyzer.py      — Language/framework detection, AST extraction, dep parsing
-├── archaeologist.py — LLM 1: produces Chapters 1–4
-├── critic.py        — LLM 2: produces Chapter 5 + Reverse Path
-├── prompts.py       — All LLM prompt templates
-├── reporter.py      — Assembles .md + .json output files
+├── cli.py            — Entry point: analyze + ui subcommands
+├── provider.py       — Provider abstraction (DeepSeek/Anthropic/OpenAI/Ollama)
+├── collector.py      — Filesystem walker, file reader, smart truncation
+├── analyzer.py       — Language/framework detection, AST, dependency parsing
+├── archaeologist.py  — LLM 1: produces Chapters 1-4
+├── critic.py         — LLM 2: produces Chapter 5 + Reverse Path
+├── prompts.py        — All LLM prompt templates
+├── reporter.py       — Assembles .md + .json output
 ├── page_generator.py — LLM 3: generates UI wireframes (on demand)
-├── ui_server.py     — FastAPI server for the visual UI
+├── ui_server.py      — FastAPI server for the visual UI
 └── ui/
-    └── index.html   — Single-file visual interface
+    └── index.html    — Single-file visual interface
 ```
+
+---
+
+## Stack
+
+- Python 3.9+
+- Typer + Rich (CLI)
+- FastAPI + Uvicorn (local UI server)
+- openai SDK (DeepSeek, OpenAI, Ollama)
+- anthropic SDK (Claude)
+
+---
+
+## Design philosophy
+
+PHANG controls orchestration. Not vendors. Provider-agnostic by default so that model changes, pricing shifts, and inference economics don't require code changes — only environment variable changes.
+
+The Archaeologist + Critic pattern mirrors good human review: one person documents thoroughly, another challenges aggressively. Neither role works as well when collapsed into one.
 
 ---
 
@@ -126,14 +133,38 @@ rivers_engineer/
 
 **`river: command not found`**
 ```bash
-pip install -e ~/Desktop/rivers-engineer\ 2
+pip install -e .
 ```
 
-**`Your credit balance is too low`**
-Add API credits at [console.anthropic.com](https://console.anthropic.com) → Plans & Billing. Note: Claude Pro (claude.ai) and API credits are separate.
+**`No API key found`**
+```bash
+export RIVER_API_KEY=your-key
+# or export RIVER_PROVIDER=anthropic && export RIVER_API_KEY=your-anthropic-key
+```
 
-**`pip install` fails with `BackendUnavailable`**
-The `pyproject.toml` had a bad build backend. It's already fixed in this repo — just re-run `pip install -e .`.
+**Analysis is slow / expensive**
+```bash
+river analyze ./my-project --depth summary
+```
+Summary mode skips file contents and analyzes structure only.
 
-**Analysis is slow**
-Use `--depth summary` to skip file contents and only analyze structure. Much faster and cheaper for large projects.
+**Using local models with Ollama**
+```bash
+ollama pull llama3
+export RIVER_PROVIDER=ollama
+river analyze ./my-project
+```
+
+---
+
+## Never commit
+
+- API keys
+- Generated `river-report-*` artifacts (unless curating examples)
+- Virtualenvs, caches, build outputs
+
+---
+
+## License
+
+MIT

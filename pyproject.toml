@@ -25,24 +25,24 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    # CLI Framework — Typer uses Python type hints to auto-generate help text,
-    # argument parsing, and shell completion. Zero boilerplate vs argparse/click.
+    # CLI Framework
     "typer>=0.9.0",
 
-    # Terminal UI — Rich handles colored output, progress spinners, tables, and
-    # markdown rendering in the terminal. The developer UX matters.
+    # Terminal UI
     "rich>=13.0.0",
 
-    # Anthropic SDK — official client for Claude API. Handles retries, streaming,
-    # token counting, and error handling.
+    # OpenAI-compatible SDK — used for DeepSeek (default), OpenAI, and Ollama providers.
+    # DeepSeek uses the OpenAI wire format; this one client covers all three.
+    "openai>=1.0.0",
+
+    # Anthropic SDK — used when RIVER_PROVIDER=anthropic.
+    # Optional at runtime but listed here so `pip install` covers all providers.
     "anthropic>=0.25.0",
 
-    # FastAPI — async-first web framework for the local UI server. Auto-generates
-    # OpenAPI docs, handles WebSockets for live updates, and starts in <1s.
+    # FastAPI — async-first web framework for the local UI server.
     "fastapi>=0.104.0",
 
-    # ASGI server — production-grade, async, required to run FastAPI locally.
-    # Does not block the main thread while serving the UI.
+    # ASGI server
     "uvicorn>=0.24.0",
 
     # TOML parsing — for pyproject.toml dependency analysis.
@@ -64,8 +64,8 @@ dev = [
 river = "rivers_engineer.cli:app"
 
 [project.urls]
-"Homepage" = "https://github.com/yourusername/rivers-engineer"
-"Bug Tracker" = "https://github.com/yourusername/rivers-engineer/issues"
+"Homepage" = "https://github.com/phang-group/rivers-engineer"
+"Bug Tracker" = "https://github.com/phang-group/rivers-engineer/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

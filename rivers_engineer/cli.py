@@ -82,7 +82,7 @@ def analyze(
     api_key: Optional[str] = typer.Option(
         None,
         "--api-key",
-        envvar="ANTHROPIC_API_KEY",
+        envvar="RIVER_API_KEY",
         help="Anthropic API key. Can also be set via ANTHROPIC_API_KEY environment variable.",
         show_default=False,
     ),
@@ -115,12 +115,12 @@ def analyze(
         raise typer.Exit(1)
 
     # Resolve API key
-    resolved_api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+    resolved_api_key = api_key or os.environ.get("RIVER_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
     if not resolved_api_key:
         console.print(
             "[red]Error:[/red] Anthropic API key is required.\n"
-            "Set it via: [cyan]export ANTHROPIC_API_KEY=your-key[/cyan]\n"
-            "Or pass it via: [cyan]river analyze /path --api-key your-key[/cyan]"
+            "Set it via: [cyan]export RIVER_API_KEY=your-key[/cyan]\n"
+            "Or pass it via: [cyan]river analyze /path --api-key your-key  (or set RIVER_PROVIDER=deepseek/anthropic/openai)[/cyan]"
         )
         raise typer.Exit(1)
 
@@ -270,7 +270,7 @@ def ui(
     api_key: Optional[str] = typer.Option(
         None,
         "--api-key",
-        envvar="ANTHROPIC_API_KEY",
+        envvar="RIVER_API_KEY",
         help="Anthropic API key (required for Page Generator feature)",
         show_default=False,
     ),
@@ -293,7 +293,7 @@ def ui(
       river ui --file ./river-report-20240101-120000.json
       river ui --port 8080
     """
-    resolved_api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+    resolved_api_key = api_key or os.environ.get("RIVER_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
 
     # Find the JSON file if not specified
     json_file: Optional[Path] = None
